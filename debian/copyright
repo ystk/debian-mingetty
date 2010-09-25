@@ -1,0 +1,16 @@
+This is Debian GNU/Linux's prepackaged version of Florian La Roche's
+minimal console-only getty for linux, mingetty.  It was constructed by
+me, Michael Alan Dorman <mdorman@debian.org> from sources retrieved
+from the net.
+
+Upstream source:
+
+   http://people.redhat.com/laroche/mingetty-1.06.tar.gz
+
+Upstream author:
+
+   Florian La Roche <laroche@redhat.com>
+
+Florian has made mingetty available under the GNU General Public
+License, which should be available as /usr/share/common-licenses/GPL on
+your Debian system.

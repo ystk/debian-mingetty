@@ -20,6 +20,7 @@
  * - Also add /bin/login-type functionality in here?
  */
 
+#define _GNU_SOURCE 1		       /* Needed to get setsid() */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -135,12 +136,28 @@ static void open_tty (void)
 	char buf[40];
 	int fd;
 
+	/* Reset permissions on the console device */
+	if ((strncmp(tty, "tty", 3) == 0) && (isdigit(tty[3]))) {
+		strcpy (buf, "/dev/vcs");
+		strcat (buf, &tty[3]);
+		if (chown (buf, 0, 3) || chmod (buf, 0600))
+			if (errno != ENOENT)
+				error ("%s: %s", buf, strerror(errno));
+
+		strcpy (buf, "/dev/vcsa");
+		strcat (buf, &tty[3]);
+		if (chown (buf, 0, 3) || chmod (buf, 0600))
+			if (errno != ENOENT)
+				error ("%s: %s", buf, strerror(errno));
+	}
+
 	/* Set up new standard input. */
-	if (tty[0] == '/')
-		strcpy (buf, tty);
-	else {
+	if (tty[0] == '/') {
+		strncpy (buf, tty, sizeof(buf)-1);
+		buf[sizeof(buf)-1] = '\0';
+	} else {
 		strcpy (buf, "/dev/");
-		strcat (buf, tty);
+		strncat (buf, tty, sizeof(buf)-strlen(buf)-1);
 	}
 	/* There is always a race between this reset and the call to
 	   vhangup() that s.o. can use to get access to your tty. */
@@ -414,12 +431,21 @@ int main (int argc, char **argv)
 		while ((logname = get_logname ()) == 0)
 			/* do nothing */ ;
 
-	if (ch_root)
-		chroot (ch_root);
-	if (ch_dir)
-		chdir (ch_dir);
-	if (priority)
-		nice (priority);
+	if (ch_root) {
+		if (chroot (ch_root))
+			error ("chroot(): %s", strerror (errno));
+		if (chdir("/"))
+			error ("chdir(\"/\"): %s", strerror (errno));
+	}
+	if (ch_dir) {
+		if (chdir (ch_dir))
+			error ("chdir(): %s", strerror (errno));
+	}
+	if (priority) {
+		errno = 0; /* see the nice(2) NOTES for why we do this */
+		if ((nice(priority) == -1) && (errno != 0))
+			error ("nice(): %s", strerror (errno));
+	}
 
 	execl (loginprog, loginprog, autologin? "-f" : "--", logname, NULL);
 	error ("%s: can't exec %s: %s", tty, loginprog, strerror (errno));
