@@ -1,3 +1,25 @@
+mingetty (1.08-2) unstable; urgency=low
+
+  * Add a debian/watch file pointing at SourceForge.
+  * Fix lintian warning on debian/copyright file.
+  * Patch:
+    + non-linux.patch: Should allow compilation on Hurd and BSD.
+
+ -- Paul Martin <pm@debian.org>  Thu, 17 May 2012 15:36:01 +0100
+
+mingetty (1.08-1) unstable; urgency=low
+
+  * New upstream release
+    + Adds new option --loginpause
+  * Update to debhelper 9 and the dh sequencer.
+  * Updated copyright file and converted to machine readable format.
+  * Convert to source format 3.0 (quilt).
+  * Added security patches from RedHat:
+    + rh-loginnamemax.patch: Allow login name up to LOGIN_NAME_MAX length.
+    + rh-clearscrollback.patch: Clear console scrollback on clear screen.
+
+ -- Paul Martin <pm@debian.org>  Tue, 01 May 2012 12:43:06 +0100
+
 mingetty (1.07-3) unstable; urgency=high
 
   * Fix bug introduced by patch from #597382: the return value of nice()

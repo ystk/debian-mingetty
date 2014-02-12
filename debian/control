@@ -1,15 +1,15 @@
 Source: mingetty
 Maintainer: Paul Martin <pm@debian.org>
-Standards-Version: 3.6.1
+Standards-Version: 3.9.3
 Section: admin
-Build-Depends: debhelper (>=3)
+Build-Depends: debhelper (>=9)
 Priority: optional
 
 Package: mingetty
 Architecture: any
 Priority: optional
 Section: admin
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends},${misc:Depends}
 Description: Console-only getty
  Mingetty is a small, efficient, console-only getty for Linux.
  .

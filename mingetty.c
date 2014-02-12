@@ -20,7 +20,6 @@
  * - Also add /bin/login-type functionality in here?
  */
 
-#define _GNU_SOURCE 1		       /* Needed to get setsid() */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -75,6 +74,8 @@ static char *ch_dir = NULL;
 static int priority = 0;
 /* automatic login with this user */
 static char *autologin = NULL;
+/* try to read a char before dropping to login prompt */
+static int loginpause = 0;
 
 /* error() - output error messages */
 static void error (const char *fmt, ...)
@@ -136,28 +137,12 @@ static void open_tty (void)
 	char buf[40];
 	int fd;
 
-	/* Reset permissions on the console device */
-	if ((strncmp(tty, "tty", 3) == 0) && (isdigit(tty[3]))) {
-		strcpy (buf, "/dev/vcs");
-		strcat (buf, &tty[3]);
-		if (chown (buf, 0, 3) || chmod (buf, 0600))
-			if (errno != ENOENT)
-				error ("%s: %s", buf, strerror(errno));
-
-		strcpy (buf, "/dev/vcsa");
-		strcat (buf, &tty[3]);
-		if (chown (buf, 0, 3) || chmod (buf, 0600))
-			if (errno != ENOENT)
-				error ("%s: %s", buf, strerror(errno));
-	}
-
 	/* Set up new standard input. */
-	if (tty[0] == '/') {
-		strncpy (buf, tty, sizeof(buf)-1);
-		buf[sizeof(buf)-1] = '\0';
-	} else {
+	if (tty[0] == '/')
+		strcpy (buf, tty);
+	else {
 		strcpy (buf, "/dev/");
-		strncat (buf, tty, sizeof(buf)-strlen(buf)-1);
+		strcat (buf, tty);
 	}
 	/* There is always a race between this reset and the call to
 	   vhangup() that s.o. can use to get access to your tty. */
@@ -300,6 +285,10 @@ static void do_prompt (int showlogin)
 		}
 		fclose (fd);
 	}
+	if (loginpause) {
+		puts ("[press ENTER to login]");
+		getc (stdin);
+	}
 	if (nohostname == 0)
 		printf ("%s ", hn);
 	if (showlogin)
@@ -344,11 +333,13 @@ static void usage (void)
 		"[--nohangup] [--nohostname] [--long-hostname] "
 		"[--loginprog=/bin/login] [--nice=10] [--delay=10] "
 		"[--chdir=/home] [--chroot=/chroot] [--autologin=user] "
+		"[--loginpause] "
 		"tty' with e.g. tty=tty1", progname);
 }
 
 static struct option const long_options[] = {
 	{ "autologin", required_argument, NULL, 'a' },
+	{ "loginpause", no_argument, &loginpause, 'p' },
 	{ "chdir", required_argument, NULL, 'w' },
 	{ "chroot", required_argument, NULL, 'r' },
 	{ "delay", required_argument, NULL, 'd' },
@@ -383,7 +374,7 @@ int main (int argc, char **argv)
 	putenv ("TERM=linux");
 #endif
 
-	while ((c = getopt_long (argc, argv, "a:d:l:n:w:r:", long_options,
+	while ((c = getopt_long (argc, argv, "a:p:d:l:n:w:r:", long_options,
 		(int *) 0)) != EOF) {
 		switch (c) {
 		case 0:
@@ -431,21 +422,12 @@ int main (int argc, char **argv)
 		while ((logname = get_logname ()) == 0)
 			/* do nothing */ ;
 
-	if (ch_root) {
-		if (chroot (ch_root))
-			error ("chroot(): %s", strerror (errno));
-		if (chdir("/"))
-			error ("chdir(\"/\"): %s", strerror (errno));
-	}
-	if (ch_dir) {
-		if (chdir (ch_dir))
-			error ("chdir(): %s", strerror (errno));
-	}
-	if (priority) {
-		errno = 0; /* see the nice(2) NOTES for why we do this */
-		if ((nice(priority) == -1) && (errno != 0))
-			error ("nice(): %s", strerror (errno));
-	}
+	if (ch_root)
+		chroot (ch_root);
+	if (ch_dir)
+		chdir (ch_dir);
+	if (priority)
+		nice (priority);
 
 	execl (loginprog, loginprog, autologin? "-f" : "--", logname, NULL);
 	error ("%s: can't exec %s: %s", tty, loginprog, strerror (errno));
