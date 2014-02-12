@@ -6,6 +6,7 @@ mingetty \- minimal getty for consoles
 [\-\-noclear] [\-\-nonewline] [\-\-noissue] [\-\-nohangup] [\-\-nohostname]
 [\-\-long\-hostname] [\-\-loginprog=/bin/login] [\-\-nice=10] [\-\-delay=5]
 [\-\-chdir=/home] [\-\-chroot=/chroot] [\-\-autologin username]
+[\-\-loginpause]
 .I tty
 .PP
 .SH DESCRIPTION
@@ -62,6 +63,11 @@ Log the specified user automatically in without asking for
 a login name and password. Check the \-f option from
 .B /bin/login
 for this.
+.TP
+.B \-\-loginpause
+Wait for any key before dropping to the login prompt.
+Can be combined with \fB\-\-autologin\fR to save memory by lazily spawning
+shells.
 .PP
 .SH "ISSUE ESCAPES"
 .B mingetty 

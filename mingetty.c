@@ -74,6 +74,8 @@ static char *ch_dir = NULL;
 static int priority = 0;
 /* automatic login with this user */
 static char *autologin = NULL;
+/* try to read a char before dropping to login prompt */
+static int loginpause = 0;
 
 /* error() - output error messages */
 static void error (const char *fmt, ...)
@@ -283,6 +285,10 @@ static void do_prompt (int showlogin)
 		}
 		fclose (fd);
 	}
+	if (loginpause) {
+		puts ("[press ENTER to login]");
+		getc (stdin);
+	}
 	if (nohostname == 0)
 		printf ("%s ", hn);
 	if (showlogin)
@@ -327,11 +333,13 @@ static void usage (void)
 		"[--nohangup] [--nohostname] [--long-hostname] "
 		"[--loginprog=/bin/login] [--nice=10] [--delay=10] "
 		"[--chdir=/home] [--chroot=/chroot] [--autologin=user] "
+		"[--loginpause] "
 		"tty' with e.g. tty=tty1", progname);
 }
 
 static struct option const long_options[] = {
 	{ "autologin", required_argument, NULL, 'a' },
+	{ "loginpause", no_argument, &loginpause, 'p' },
 	{ "chdir", required_argument, NULL, 'w' },
 	{ "chroot", required_argument, NULL, 'r' },
 	{ "delay", required_argument, NULL, 'd' },
@@ -366,7 +374,7 @@ int main (int argc, char **argv)
 	putenv ("TERM=linux");
 #endif
 
-	while ((c = getopt_long (argc, argv, "a:d:l:n:w:r:", long_options,
+	while ((c = getopt_long (argc, argv, "a:p:d:l:n:w:r:", long_options,
 		(int *) 0)) != EOF) {
 		switch (c) {
 		case 0:
